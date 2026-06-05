@@ -7,6 +7,7 @@
   --font-display: "ZCOOL XiaoWei", "Noto Serif SC", serif;
   --font-brush: "Ma Shan Zheng", "Long Cang", "Noto Serif SC", serif;
   --seal-red: #a83232;
+  --char-scale: 1;
 }
 
 * { box-sizing: border-box; }
@@ -185,6 +186,11 @@ html, body {
   grid-template-columns: 52px 1fr;
   column-gap: 20px;
   align-items: start;
+  border-radius: 4px;
+  transition: background-color 0.45s ease;
+}
+.item.is-reading {
+  background: color-mix(in srgb, var(--hover-bg, rgba(0,0,0,0.06)) 40%, transparent);
 }
 
 /* Per-item meta column (number) */
@@ -251,9 +257,8 @@ html, body {
 
 .row-vert {
   font-family: var(--font-brush);
-  font-size: 40px;
+  font-size: calc(40px * var(--char-scale));
   line-height: 1.05;
-  letter-spacing: 0.04em;
   color: var(--ink-strong);
   text-align: center;
   padding: 6px 6px 4px;
@@ -280,7 +285,7 @@ html, body {
 
 /* Trivial rows (之/于/而/其/以/兮 + punctuation): no hover, slightly faded */
 .row-trivial .row-vert {
-  font-size: 30px;
+  font-size: calc(30px * var(--char-scale));
   color: var(--ink-muted);
   opacity: 0.7;
   padding: 4px 6px 4px;
@@ -752,9 +757,8 @@ html, body {
 /* ============== Highlight banner for famous lines ============== */
 .item.is-highlight .row-vert {
   font-family: var(--font-brush);
-  font-size: 48px;
+  font-size: calc(48px * var(--char-scale));
   color: var(--ink-emph);
-  letter-spacing: 0.06em;
 }
 .item.is-highlight .word-grid::after {
   content: "千古名句";
@@ -840,8 +844,8 @@ html, body {
   .item { grid-template-columns: 40px 1fr; column-gap: 14px; }
   .word-grid { grid-template-columns: 60px 1fr; column-gap: 18px; }
   .word-grid::before { left: 60px; margin-left: 9px; }
-  .row-vert { font-size: 28px; padding: 6px 4px; }
-  .item.is-highlight .row-vert { font-size: 32px; }
+  .row-vert { font-size: calc(28px * var(--char-scale)); padding: 6px 4px; }
+  .item.is-highlight .row-vert { font-size: calc(32px * var(--char-scale)); }
   .item-extras { margin-left: 78px; }
   .item-title .preface-display { flex-direction: column; gap: 24px; }
   .item-title .preface-vert { border-right: none; border-bottom: 1px solid var(--rule); padding: 8px 0; font-size: 44px; }
@@ -865,8 +869,8 @@ html, body {
 
   .word-grid { grid-template-columns: 50px 1fr; column-gap: 13px; }
   .word-grid::before { left: 50px; margin-left: 6px; }
-  .row-vert { font-size: 25px; padding: 7px 3px 5px; }
-  .item.is-highlight .row-vert { font-size: 29px; }
+  .row-vert { font-size: calc(25px * var(--char-scale)); padding: 7px 3px 5px; }
+  .item.is-highlight .row-vert { font-size: calc(29px * var(--char-scale)); }
 
   /* a little more breathing room + larger gloss text for thumb reading */
   .row-def { padding: 9px 8px 9px 13px; }
@@ -914,4 +918,47 @@ html, body {
   }
   /* let the bottom nav clear the final content */
   .colophon { padding-bottom: 96px; }
+}
+
+/* ============== Font size control ============== */
+.font-ctrl {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(20,15,10,0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 5px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(200,170,120,0.2);
+}
+.font-ctrl button {
+  -webkit-appearance: none;
+  appearance: none;
+  background: none;
+  border: none;
+  color: rgba(220,200,170,0.65);
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color .15s, background .15s;
+  padding: 0;
+}
+.font-ctrl button:hover:not(:disabled) {
+  color: #f3e3c3;
+  background: rgba(168,50,50,0.45);
+}
+.font-ctrl button:disabled {
+  opacity: 0.25;
+  cursor: default;
 }

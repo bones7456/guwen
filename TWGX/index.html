@@ -26,6 +26,12 @@
   <!-- filled by JS -->
 </nav>
 
+<!-- ============ 字号控制 ============ -->
+<div class="font-ctrl" aria-label="字号调节">
+  <button id="font-down" title="缩小字号">－</button>
+  <button id="font-up"   title="放大字号">＋</button>
+</div>
+
 <!-- ============ 正文 ============ -->
 <main id="main"></main>
 
@@ -170,7 +176,7 @@
     `).join('');
     return `
       <article class="item item-title">
-        <aside class="item-meta"><div class="item-num">题</div></aside>
+        <aside class="item-meta"><div class="item-num">00</div></aside>
         <div class="item-body">
           <div class="word-grid">
             <div class="preface-display">
@@ -316,6 +322,36 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') setActive(null);
   });
+
+  // C2 — 字号调节（四档：0.75 / 1.0 / 1.25 / 1.5）
+  const SCALES = [0.75, 1.0, 1.25, 1.5];
+  let scaleIdx = Math.min(
+    Math.max(parseInt(localStorage.getItem('twgx-scale') ?? '1', 10), 0),
+    SCALES.length - 1
+  );
+  const btnDown = document.getElementById('font-down');
+  const btnUp   = document.getElementById('font-up');
+  function applyScale() {
+    document.documentElement.style.setProperty('--char-scale', SCALES[scaleIdx]);
+    btnDown.disabled = scaleIdx === 0;
+    btnUp.disabled   = scaleIdx === SCALES.length - 1;
+    localStorage.setItem('twgx-scale', scaleIdx);
+  }
+  btnDown.addEventListener('click', () => { if (scaleIdx > 0) { scaleIdx--; applyScale(); } });
+  btnUp.addEventListener('click',   () => { if (scaleIdx < SCALES.length - 1) { scaleIdx++; applyScale(); } });
+  applyScale();
+
+  // C3 — 当前阅读句高亮（滚动到视口中段时激活）
+  let readingItem = null;
+  const readIO = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      if (readingItem) readingItem.classList.remove('is-reading');
+      readingItem = e.target;
+      e.target.classList.add('is-reading');
+    });
+  }, { rootMargin: '-30% 0px -50% 0px', threshold: 0 });
+  document.querySelectorAll('.item').forEach(el => readIO.observe(el));
 })();
 </script>
 

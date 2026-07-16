@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>千字文 · 逐字解析</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ============ 封面 ============ -->
+<section class="cover">
+  <div class="paper-noise"></div>
+  <div class="cover-inner">
+    <p class="cover-subtitle">南朝梁 · 周兴嗣</p>
+    <h1 class="cover-title">千字文</h1>
+    <div class="cover-rule"></div>
+    <p class="cover-author">逐 <span>·</span> 字 <span>·</span> 解 <span>·</span> 析</p>
+    <span class="cover-seal">興<br/>嗣</span>
+    <p class="cover-meta">千字韵语 · 逐字释义 · 意境分段</p>
+  </div>
+</section>
+
+<!-- ============ 目录侧栏 ============ -->
+<nav class="toc" aria-label="目录">
+  <!-- filled by JS -->
+</nav>
+
+<!-- ============ 字号控制 ============ -->
+<div class="font-ctrl" aria-label="字号调节">
+  <button id="font-down" title="缩小字号">－</button>
+  <button id="font-up"   title="放大字号">＋</button>
+</div>
+
+<!-- ============ 正文 ============ -->
+<main id="main"></main>
+
+<!-- ============ 落款 ============ -->
+<footer class="colophon">
+  <div>天 地 玄 黄 &nbsp;&nbsp; 宇 宙 洪 荒</div>
+  <div class="seal">千<br/>文</div>
+  <div>原文据周兴嗣次韵本 ·&nbsp;字义典故依注疏整理</div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  const main = document.getElementById('main');
+  const toc = document.querySelector('.toc');
+
+  const PUNCT_RE = /[，。；：、！？「」『』（）·]/;
+  const STRIP_PUNCT = /[、，。；：「」『』！？·（）\s]/g;
+
+  // 《千字文》逐字全释：不设虚词豁免，每个字都要有释义。
+  const TRIVIAL = new Set([]);
+
+  // Pinyin annotations for genuinely uncommon characters
+  // （含专为本篇语境标注的多音字：宿 xiù、裳 cháng、观 guàn、说 yuè、
+  //   禅 shàn、塞 sài、稽 qǐ、任 rén、的 dì、侠 jiā、勒 lè 等）。
+  const PINYIN = {
+    '昃':'zè', '宿':'xiù', '闰':'rùn', '吕':'lǚ', '柰':'nài',
+    '芥':'jiè', '阙':'què', '冈':'gāng', '裳':'cháng', '虞':'yú',
+    '殷':'yīn', '拱':'gǒng', '戎':'róng', '羌':'qiāng', '遐':'xiá',
+    '迩':'ěr', '驹':'jū', '鞠':'jū', '罔':'wǎng', '靡':'mǐ',
+    '羔':'gāo', '璧':'bì', '履':'lǚ', '夙':'sù', '凊':'qìng',
+    '馨':'xīn', '笃':'dǔ', '棠':'táng', '傅':'fù', '箴':'zhēn',
+    '恻':'cè', '匪':'fěi', '爵':'jué', '縻':'mí', '邑':'yì',
+    '邙':'máng', '渭':'wèi', '泾':'jīng', '观':'guàn', '楹':'yíng',
+    '筵':'yán', '瑟':'sè', '笙':'shēng', '陛':'bì', '弁':'biàn',
+    '侠':'jiā', '辇':'niǎn', '毂':'gǔ', '缨':'yīng', '禄':'lù',
+    '侈':'chǐ', '勒':'lè', '磻':'pán', '尹':'yǐn', '奄':'yǎn',
+    '阜':'fù', '孰':'shú', '桓':'huán', '绮':'qǐ', '说':'yuè',
+    '乂':'yì', '寔':'shí', '虢':'guó', '翦':'jiǎn', '岱':'dài',
+    '禅':'shàn', '塞':'sài', '碣':'jié', '钜':'jù', '邈':'miǎo',
+    '岫':'xiù', '杳':'yǎo', '冥':'míng', '稼':'jià', '穑':'sè',
+    '俶':'chù', '亩':'mǔ', '黍':'shǔ', '稷':'jì', '黜':'chù',
+    '陟':'zhì', '轲':'kē', '秉':'bǐng', '敕':'chì', '聆':'líng',
+    '贻':'yí', '厥':'jué', '猷':'yóu', '祗':'zhī', '诫':'jiè',
+    '殆':'dài', '皋':'gāo', '寥':'liáo', '渠':'qú', '的':'dì',
+    '枇':'pí', '杷':'pá', '蚤':'zǎo', '翳':'yì', '鹍':'kūn',
+    '绛':'jiàng', '霄':'xiāo', '耽':'dān', '囊':'náng', '輶':'yóu',
+    '攸':'yōu', '垣':'yuán', '膳':'shàn', '饫':'yù', '烹':'pēng',
+    '糟':'zāo', '糠':'kāng', '妾':'qiè', '帷':'wéi', '纨':'wán',
+    '炜':'wěi', '寐':'mèi', '笋':'sǔn', '觞':'shāng', '矫':'jiǎo',
+    '嫡':'dí', '嗣':'sì', '烝':'zhēng', '稽':'qǐ', '颡':'sǎng',
+    '悚':'sǒng', '惶':'huáng', '笺':'jiān', '牒':'dié', '骸':'hái',
+    '垢':'gòu', '骡':'luó', '犊':'dú', '骇':'hài', '骧':'xiāng',
+    '诛':'zhū', '僚':'liáo', '嵇':'jī', '阮':'ruǎn', '啸':'xiào',
+    '恬':'tián', '钧':'jūn', '任':'rén', '颦':'pín', '妍':'yán',
+    '矢':'shǐ', '曦':'xī', '晖':'huī', '曜':'yào', '璇':'xuán',
+    '玑':'jī', '斡':'wò', '晦':'huì', '魄':'pò', '祜':'hù',
+    '绥':'suí', '劭':'shào', '矩':'jǔ', '矜':'jīn', '瞻':'zhān',
+    '眺':'tiào', '陋':'lòu', '诮':'qiào', '焉':'yān', '哉':'zāi'
+  };
+
+  function hasPinyin(word) {
+    for (const c of word) if (PINYIN[c]) return true;
+    return false;
+  }
+
+  // 简繁归并对照（六组十二处）：def 带 dup 标记时在释义后追加 ⓘ 角标，
+  // 弹出卡片；dup 为具体字时，卡片中该组高亮。
+  const DUP_GROUPS = [
+    { ch: '云', text: '<b>雲</b>騰致雨 ／ 禪主<b>云</b>亭' },
+    { ch: '昆', text: '玉出<b>崑</b>岡 ／ <b>昆</b>池碣石' },
+    { ch: '发', text: '周<b>發</b>殷湯 ／ 蓋此身<b>髮</b>' },
+    { ch: '洁', text: '女慕貞<b>絜</b> ／ 紈扇圓<b>潔</b>' },
+    { ch: '并', text: '百郡秦<b>幷</b> ／ <b>並</b>皆佳妙' },
+    { ch: '戚', text: '<b>慼</b>謝歡招 ／ 親<b>戚</b>故舊' }
+  ];
+  function dupTipHtml(current) {
+    const rows = DUP_GROUPS.map(g =>
+      `<span class="info-row${g.ch === current ? ' is-current' : ''}"><span class="info-ch">${g.ch}</span><span class="info-tw">${g.text}</span></span>`
+    ).join('');
+    return `<span class="info-tip"><button class="info-i" type="button" aria-label="展开六组简繁归并对照">i</button>` +
+      `<span class="info-panel" role="tooltip"><span class="info-head">六组繁体字简化后归并同形，简体去重后余 994 字</span>${rows}</span></span>`;
+  }
+  function defHtml(d) {
+    if (!d.dup) return d.d;
+    return d.d + dupTipHtml(typeof d.dup === 'string' ? d.dup : null);
+  }
+
+  function renderCharsPlain(chars) {
+    return [...chars].map(c => {
+      if (PUNCT_RE.test(c)) return `<span class="char punct">${c}</span>`;
+      return `<span class="char">${c}</span>`;
+    }).join('');
+  }
+
+  // Render the word with pinyin annotation above each rare char.
+  function renderWordWithPinyin(word) {
+    return [...word].map(c => {
+      const py = PINYIN[c];
+      if (py) return `<ruby><rb>${c}</rb><rt>${py}</rt></ruby>`;
+      return `<span class="rb-plain">${c}</span>`;
+    }).join('');
+  }
+
+  // Split raw text into atomic rows. Each row is either:
+  //   - a DEF row: chars match a meaningful def's word (hoverable, has def)
+  //   - a TRIVIAL row: a single particle or punctuation char (faded, no hover)
+  // Multi-char defs (e.g. "枇杷") stay in one row.
+  function buildRows(raw, defs) {
+    // Build word → def lookup; ignore trivial words.
+    const defMap = new Map();
+    const words = [];
+    for (const d of defs) {
+      const w = (d.w || '').replace(STRIP_PUNCT, '');
+      if (!w || TRIVIAL.has(w)) continue;
+      if (!defMap.has(w)) {
+        defMap.set(w, d);
+        words.push(w);
+      }
+    }
+    // Sort longest first so we prefer 枇杷 over 枇 when both could match.
+    words.sort((a, b) => b.length - a.length);
+
+    const rows = [];
+    let i = 0;
+    while (i < raw.length) {
+      let matched = null;
+      for (const w of words) {
+        if (raw.startsWith(w, i)) { matched = w; break; }
+      }
+      if (matched) {
+        rows.push({ chars: matched, def: defMap.get(matched), trivial: false });
+        i += matched.length;
+      } else {
+        rows.push({ chars: raw[i], def: null, trivial: true });
+        i++;
+      }
+    }
+    return rows;
+  }
+
+  function renderAllusion(a) {
+    const head = `<span class="a-head">${a.title || ''}</span>`;
+    const metas = [];
+    if (a.era)    metas.push(`<span class="a-meta">${a.era}</span>`);
+    if (a.people) metas.push(`<span class="a-meta">${a.people}</span>`);
+    const metaLine = metas.join('');
+
+    let body = '';
+    if (a.story || a.impact) {
+      const rows = [];
+      if (a.story)  rows.push(`<dt>情节</dt><dd>${a.story}</dd>`);
+      if (a.impact) rows.push(`<dt>影响</dt><dd>${a.impact}</dd>`);
+      body = `<dl class="a-body">${rows.join('')}</dl>`;
+    } else if (a.text) {
+      body = `<div class="a-text">${a.text}</div>`;
+    }
+    return `
+      <div class="sect allusion">
+        <span class="tag">典故</span>${head}${metaLine}${body}
+      </div>`;
+  }
+
+  function renderSummary(item) {
+    const parts = [];
+    if (item.meaning) {
+      parts.push(`<div class="sect meaning"><span class="tag">句意</span>${item.meaning}</div>`);
+    }
+    if (item.allusion) {
+      const list = Array.isArray(item.allusion) ? item.allusion : [item.allusion];
+      list.forEach(a => parts.push(renderAllusion(a)));
+    }
+    if (item.note) {
+      parts.push(`<div class="sect note"><span class="tag">说明</span>${item.note}</div>`);
+    }
+    return parts.length ? `<div class="summary">${parts.join('')}</div>` : '';
+  }
+
+  function renderPreface(item) {
+    const defsHtml = item.defs.map(d => `
+      <div class="preface-def">
+        <div class="w">${d.w}</div>
+        <div class="d">${defHtml(d)}</div>
+      </div>
+    `).join('');
+    return `
+      <article class="item item-title">
+        <aside class="item-meta"><div class="item-num">00</div></aside>
+        <div class="item-body">
+          <div class="word-grid">
+            <div class="preface-display">
+              <div class="preface-vert">${item.raw}</div>
+              <div class="preface-defs">${defsHtml}</div>
+            </div>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderItem(item) {
+    if (item.n === '题') return renderPreface(item);
+
+    const rows = (item.defs && item.defs.length)
+      ? buildRows(item.raw, item.defs)
+      : [{ chars: item.raw, def: null, trivial: true }];
+
+    // Locate last non-trivial row — summary goes inside its row-def.
+    let lastDefIdx = -1;
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (!rows[i].trivial) { lastDefIdx = i; break; }
+    }
+    const summaryHtml = renderSummary(item);
+
+    const rowsHtml = rows.map((r, idx) => {
+      if (r.trivial) {
+        return `
+          <div class="row row-trivial">
+            <div class="row-vert">${renderCharsPlain(r.chars)}</div>
+            <div class="row-def is-empty"></div>
+          </div>`;
+      }
+      const word = r.def.w || '';
+      const showPy = hasPinyin(word);
+      const wpy = showPy ? `<div class="w-py">${renderWordWithPinyin(word)}</div>` : '';
+      const extras = (idx === lastDefIdx) ? summaryHtml : '';
+      return `
+        <div class="row">
+          <div class="row-vert">${renderCharsPlain(r.chars)}</div>
+          <div class="row-def">
+            ${wpy}
+            <div class="d">${defHtml(r.def)}</div>
+            ${extras}
+          </div>
+        </div>`;
+    }).join('');
+
+    // If there were no non-trivial rows but we still have a summary,
+    // fall back to placing it after the rows.
+    const trailingSummary = (lastDefIdx === -1 && summaryHtml)
+      ? `<div class="row"><div class="row-vert"></div><div class="row-def">${summaryHtml}</div></div>`
+      : '';
+
+    const cls = ['item'];
+    if (item.highlight) cls.push('is-highlight');
+    const numLabel = String(item.n).padStart(2, '0');
+
+    return `
+      <article class="${cls.join(' ')}">
+        <aside class="item-meta"><div class="item-num">${numLabel}</div></aside>
+        <div class="item-body">
+          <div class="word-grid">${rowsHtml}${trailingSummary}</div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderSection(sec) {
+    return `
+      <section class="section mood-${sec.mood}" id="sec-${sec.id}">
+        <div class="paper-noise"></div>
+        <header class="section-head">
+          <div class="section-label">${sec.label}</div>
+          <div class="section-titles">
+            <h2 class="section-title">${sec.title}</h2>
+            <p class="section-subtitle">${sec.subtitle}</p>
+          </div>
+          <div class="section-num">${sec.coda ? '終 章' : sec.id + ' / XI'}</div>
+        </header>
+        <div class="items">${sec.items.map(renderItem).join('')}</div>
+      </section>
+    `;
+  }
+
+  main.innerHTML = window.QIANZIWEN_DATA.map((s, i) => {
+    const html = renderSection(s);
+    return html + (i < window.QIANZIWEN_DATA.length - 1 ? '<div class="section-divider"></div>' : '');
+  }).join('');
+
+  toc.innerHTML = window.QIANZIWEN_DATA.map(s =>
+    `<a href="#sec-${s.id}" data-target="sec-${s.id}" title="${s.title}">${s.label}</a>`
+  ).join('');
+
+  const tocLinks = Array.from(toc.querySelectorAll('a'));
+  const sectionEls = window.QIANZIWEN_DATA.map(s => document.getElementById('sec-' + s.id));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        tocLinks.forEach(a => a.classList.toggle('is-active', a.dataset.target === id));
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+  sectionEls.forEach(el => el && io.observe(el));
+
+  /* ----- Tap / click to pin a pair (highlights both sides). ----- */
+  let activeRow = null;
+  function setActive(row) {
+    if (activeRow && activeRow !== row) activeRow.classList.remove('is-active');
+    if (!row) { activeRow = null; return; }
+    if (row === activeRow) {
+      row.classList.remove('is-active');
+      activeRow = null;
+    } else {
+      row.classList.add('is-active');
+      activeRow = row;
+    }
+  }
+
+  main.addEventListener('click', (e) => {
+    if (e.target.closest('.summary')) return;
+    const row = e.target.closest('.row');
+    if (row && main.contains(row) && !row.classList.contains('row-trivial')) {
+      setActive(row);
+      return;
+    }
+    // clicked empty space within main → release any pinned pair
+    setActive(null);
+  });
+
+  // tapping outside the text body also releases
+  document.addEventListener('click', (e) => {
+    if (activeRow && !e.target.closest('#main')) setActive(null);
+  });
+
+  // Esc clears the pin and any open info tip (desktop nicety)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      setActive(null);
+      closeInfoTips();
+    }
+  });
+
+  // ⓘ 信息角标：桌面 hover 即显（CSS 处理）；无 hover 的设备点按开合
+  function closeInfoTips(except) {
+    document.querySelectorAll('.info-tip.is-open').forEach(t => {
+      if (t !== except) t.classList.remove('is-open');
+    });
+  }
+  document.querySelectorAll('.info-tip .info-i').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tip = btn.closest('.info-tip');
+      closeInfoTips(tip);
+      tip.classList.toggle('is-open');
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.info-tip')) closeInfoTips();
+  });
+
+  // 字号调节（四档：0.75 / 1.0 / 1.25 / 1.5）
+  const SCALES = [0.75, 1.0, 1.25, 1.5];
+  let scaleIdx = Math.min(
+    Math.max(parseInt(localStorage.getItem('qzw-scale') ?? '1', 10), 0),
+    SCALES.length - 1
+  );
+  const btnDown = document.getElementById('font-down');
+  const btnUp   = document.getElementById('font-up');
+  function applyScale() {
+    document.documentElement.style.setProperty('--char-scale', SCALES[scaleIdx]);
+    btnDown.disabled = scaleIdx === 0;
+    btnUp.disabled   = scaleIdx === SCALES.length - 1;
+    localStorage.setItem('qzw-scale', scaleIdx);
+  }
+  btnDown.addEventListener('click', () => { if (scaleIdx > 0) { scaleIdx--; applyScale(); } });
+  btnUp.addEventListener('click',   () => { if (scaleIdx < SCALES.length - 1) { scaleIdx++; applyScale(); } });
+  applyScale();
+
+  // 当前阅读句高亮（滚动到视口中段时激活）
+  let readingItem = null;
+  const readIO = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      if (readingItem) readingItem.classList.remove('is-reading');
+      readingItem = e.target;
+      e.target.classList.add('is-reading');
+    });
+  }, { rootMargin: '-30% 0px -50% 0px', threshold: 0 });
+  document.querySelectorAll('.item').forEach(el => readIO.observe(el));
+})();
+</script>
+
+</body>
+</html>

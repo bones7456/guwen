@@ -28,8 +28,8 @@
 
 <!-- ============ 字号控制 ============ -->
 <div class="font-ctrl" aria-label="字号调节">
-  <button id="font-down" title="缩小字号">－</button>
-  <button id="font-up"   title="放大字号">＋</button>
+  <button id="font-down" title="缩小字号" aria-label="缩小字号">－</button>
+  <button id="font-up"   title="放大字号" aria-label="放大字号">＋</button>
 </div>
 
 <!-- ============ 正文 ============ -->
@@ -39,7 +39,7 @@
 <footer class="colophon">
   <div>豫 章 故 郡 &nbsp;&nbsp; 洪 都 新 府</div>
   <div class="seal">滕<br/>阁</div>
-  <div>原文据通行本 ·&nbsp;字词典故依注疏整理</div>
+  <div>正文采用现代常见通行文本，参校正仓院 707 年抄本；重要异文随文标注 ·&nbsp;<a href="https://zh.wikisource.org/zh-hans/%E6%BB%95%E7%8E%8B%E9%96%A3%E5%BA%8F" target="_blank" rel="noopener noreferrer">校勘文本</a></div>
 </footer>
 
 <script src="data.js"></script>
@@ -48,8 +48,8 @@
   const main = document.getElementById('main');
   const toc = document.querySelector('.toc');
 
-  const PUNCT_RE = /[，。；：、！？「」『』（）·]/;
-  const STRIP_PUNCT = /[、，。；：「」『』！？·（）\s]/g;
+  const PUNCT_RE = /[，。；：、！？「」『』（）·,.;:!?]/;
+  const STRIP_PUNCT = /[、，。；：「」『』！？·（）,.;:!?\s]/g;
 
   // Particles/prepositions treated as TRIVIAL — rendered as their own
   // non-hoverable row with empty right side.
@@ -57,22 +57,30 @@
 
   // Pinyin annotations for genuinely uncommon characters.
   const PINYIN = {
-    '轸':'zhěn', '瓯':'ōu', '棨':'qǐ', '戟':'jǐ', '阎':'yán',
+    '轸':'zhěn', '瓯':'ōu', '棨':'qǐ', '戟':'jǐ', '阎':'yán', '隍':'huáng',
     '襜':'chān', '帷':'wéi', '懿':'yì', '蛟':'jiāo', '樽':'zūn',
     '凫':'fú', '渚':'zhǔ', '萦':'yíng', '闼':'tà', '甍':'méng',
     '纡':'yū', '闾':'lǘ', '舸':'gě', '舳':'zhú', '霁':'jì',
-    '鹜':'wù', '蠡':'lǐ', '籁':'lài', '遏':'è', '睢':'suī',
+    '鹜':'wù', '蠡':'lǐ', '籁':'lài', '遏':'è', '睢':'suī', '潦':'lǎo',
     '邺':'yè', '迥':'jiǒng', '溟':'míng', '阍':'hūn', '嗟':'jiē',
-    '舛':'chuǎn', '窜':'cuàn', '骖':'cān', '騑':'fēi', '阿':'ē',
+    '舛':'chuǎn', '窜':'cuàn', '骖':'cān', '騑':'fēi', '阿':'ē', '纤':'xiān',
     '簪':'zān', '笏':'hù', '叨':'tāo', '袂':'mèi', '缨':'yīng',
     '悫':'què', '涸':'hé', '辙':'zhé', '赊':'shē', '隅':'yú',
     '榆':'yú', '遄':'chuán', '甫':'fǔ', '兹':'zī', '勃':'bó',
-    '冯':'féng', '蕃':'fān', '稚':'zhì', '阮':'ruǎn',
+    '冯':'féng', '蕃':'fān', '阮':'ruǎn',
     '彭':'péng', '崇':'chóng', '汀':'tīng', '盈':'yíng', '俨':'yǎn',
-    '孺':'rú', '蛮':'mán', '槛':'jiàn', '鸾':'luán'
+    '孺':'rú', '蛮':'mán', '槛':'jiàn', '鸾':'luán', '睇':'dì',
+    '眄':'miǎn', '会':'kuài', '梓':'zǐ', '筵':'yán'
+  };
+
+  // Context-specific readings for otherwise common polyphonic characters.
+  // Arrays align with characters in the complete word; null means no ruby.
+  const WORD_PINYIN = {
+    '不齐': [null, 'jì']
   };
 
   function hasPinyin(word) {
+    if (WORD_PINYIN[word]) return true;
     for (const c of word) if (PINYIN[c]) return true;
     return false;
   }
@@ -86,8 +94,9 @@
 
   // Render the word with pinyin annotation above each rare char.
   function renderWordWithPinyin(word) {
-    return [...word].map(c => {
-      const py = PINYIN[c];
+    const overrides = WORD_PINYIN[word] || [];
+    return [...word].map((c, idx) => {
+      const py = overrides[idx] || PINYIN[c];
       if (py) return `<ruby><rb>${c}</rb><rt>${py}</rt></ruby>`;
       return `<span class="rb-plain">${c}</span>`;
     }).join('');
@@ -152,6 +161,14 @@
       </div>`;
   }
 
+  function renderSources(sources) {
+    const list = Array.isArray(sources) ? sources : [sources];
+    const links = list.map(source =>
+      `<a href="${source.url}" target="_blank" rel="noopener noreferrer">${source.title}</a>`
+    ).join('<span aria-hidden="true"> · </span>');
+    return `<div class="sect sources"><span class="tag">出处</span><span class="source-list">${links}</span></div>`;
+  }
+
   function renderSummary(item) {
     const parts = [];
     if (item.meaning) {
@@ -163,6 +180,9 @@
     }
     if (item.note) {
       parts.push(`<div class="sect note"><span class="tag">说明</span>${item.note}</div>`);
+    }
+    if (item.sources) {
+      parts.push(renderSources(item.sources));
     }
     return parts.length ? `<div class="summary">${parts.join('')}</div>` : '';
   }
@@ -217,7 +237,9 @@
       const extras = (idx === lastDefIdx) ? summaryHtml : '';
       return `
         <div class="row">
-          <div class="row-vert">${renderCharsPlain(r.chars)}</div>
+          <button type="button" class="row-toggle" aria-pressed="false" aria-label="切换「${word}」的高亮">
+            <span class="row-vert" aria-hidden="true">${renderCharsPlain(r.chars)}</span>
+          </button>
           <div class="row-def">
             ${wpy}
             <div class="d">${r.def.d}</div>
@@ -290,14 +312,25 @@
      elsewhere — to release. Clicks inside the 句意/典故 summary are
      ignored so the longer notes stay readable and selectable. ----- */
   let activeRow = null;
+  function toggleFor(row) {
+    return row ? row.querySelector('.row-toggle') : null;
+  }
   function setActive(row) {
-    if (activeRow && activeRow !== row) activeRow.classList.remove('is-active');
-    if (!row) { activeRow = null; return; }
+    if (activeRow && activeRow !== row) {
+      activeRow.classList.remove('is-active');
+      toggleFor(activeRow).setAttribute('aria-pressed', 'false');
+    }
+    if (!row) {
+      activeRow = null;
+      return;
+    }
     if (row === activeRow) {
       row.classList.remove('is-active');
+      toggleFor(row).setAttribute('aria-pressed', 'false');
       activeRow = null;
     } else {
       row.classList.add('is-active');
+      toggleFor(row).setAttribute('aria-pressed', 'true');
       activeRow = row;
     }
   }
@@ -325,17 +358,26 @@
 
   // C2 — 字号调节（四档：0.75 / 1.0 / 1.25 / 1.5）
   const SCALES = [0.75, 1.0, 1.25, 1.5];
-  let scaleIdx = Math.min(
-    Math.max(parseInt(localStorage.getItem('twgx-scale') ?? '1', 10), 0),
-    SCALES.length - 1
-  );
+  let savedScaleIdx = 1;
+  try {
+    savedScaleIdx = Number(localStorage.getItem('twgx-scale') ?? '1');
+  } catch (_) {
+    // file:// or a privacy policy may disable persistent storage.
+  }
+  let scaleIdx = Number.isInteger(savedScaleIdx) && savedScaleIdx >= 0 && savedScaleIdx < SCALES.length
+    ? savedScaleIdx
+    : 1;
   const btnDown = document.getElementById('font-down');
   const btnUp   = document.getElementById('font-up');
   function applyScale() {
     document.documentElement.style.setProperty('--char-scale', SCALES[scaleIdx]);
     btnDown.disabled = scaleIdx === 0;
     btnUp.disabled   = scaleIdx === SCALES.length - 1;
-    localStorage.setItem('twgx-scale', scaleIdx);
+    try {
+      localStorage.setItem('twgx-scale', scaleIdx);
+    } catch (_) {
+      // Keep the in-memory setting when persistence is unavailable.
+    }
   }
   btnDown.addEventListener('click', () => { if (scaleIdx > 0) { scaleIdx--; applyScale(); } });
   btnUp.addEventListener('click',   () => { if (scaleIdx < SCALES.length - 1) { scaleIdx++; applyScale(); } });

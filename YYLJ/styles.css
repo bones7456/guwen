@@ -1,0 +1,1052 @@
+/* 《岳阳楼记》逐字解析 — 古典中文阅读体验 */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&family=Long+Cang&display=swap');
+
+:root {
+  --font-serif: "Noto Serif SC", "Songti SC", "STSong", "宋体", serif;
+  --font-display: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+  --font-brush: "Ma Shan Zheng", "Long Cang", "Noto Serif SC", serif;
+  --seal-red: #a83232;
+  --char-scale: 1;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  font-family: var(--font-serif);
+  background: #1a1410;
+  color: #2a1f15;
+  font-feature-settings: "palt";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============== PAPER TEXTURE (shared subtle noise) ============== */
+.paper-noise {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: .35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ============== COVER ============== */
+.cover {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #1d1812 0%, #2a1f15 40%, #3a2a1a 100%);
+  color: #e8d8b8;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  justify-items: center;
+  overflow: hidden;
+  padding: 80px 40px;
+  /* decorative — don't let a long-press select it into an odd blue block */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.cover::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 70% 30%, rgba(218,165,99,0.18), transparent 55%),
+    radial-gradient(ellipse at 20% 80%, rgba(168,50,50,0.12), transparent 55%);
+  pointer-events: none;
+}
+.cover-inner {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 36px;
+}
+.cover-title {
+  font-family: var(--font-display);
+  /* the title itself should be selectable/copyable */
+  user-select: text;
+  -webkit-user-select: text;
+  font-size: clamp(72px, 11vw, 168px);
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  margin: 0;
+  color: #f3e3c3;
+  text-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  writing-mode: vertical-rl;
+  /* keep all four glyphs in one vertical column — never wrap to a 2nd column,
+     even when the window is wide-but-short */
+  white-space: nowrap;
+  line-height: 1.05;
+  /* +0.15em on top mirrors the trailing letter-spacing below the last
+     glyph, so the column sits truly centred in its box (no bottom drift) */
+  padding: calc(24px + 0.15em) 0 24px;
+}
+.cover-subtitle {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  letter-spacing: 0.6em;
+  color: #c9a878;
+  margin: 0;
+  padding-left: 0.6em;
+}
+.cover-author {
+  font-size: 16px;
+  color: #b9966a;
+  letter-spacing: 0.3em;
+}
+.cover-author span { color: #d9bc8e; margin: 0 0.4em; }
+.cover-rule {
+  width: 1px; height: 60px; background: linear-gradient(180deg, transparent, #c9a878, transparent);
+}
+.cover-meta {
+  font-size: 13px; color: #8a7350;
+  letter-spacing: 0.4em;
+  margin-top: 8px;
+}
+.cover-seal {
+  display: inline-block;
+  width: 64px; height: 64px;
+  border: 2px solid var(--seal-red);
+  border-radius: 4px;
+  color: var(--seal-red);
+  font-family: var(--font-display);
+  writing-mode: vertical-rl;
+  text-align: center;
+  font-size: 18px;
+  line-height: 30px;
+  padding: 6px 0;
+  letter-spacing: 0;
+  background: rgba(168,50,50,0.04);
+  box-shadow: inset 0 0 0 1px rgba(168,50,50,0.4);
+  transform: rotate(-2deg);
+}
+
+/* ============== SECTIONS ============== */
+.section {
+  position: relative;
+  padding: 120px 0 100px;
+  overflow: hidden;
+}
+
+.section-head {
+  max-width: 1240px;
+  margin: 0 auto 60px;
+  padding: 0 60px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: end;
+  gap: 32px;
+}
+.section-label {
+  font-family: var(--font-display);
+  font-size: 96px;
+  font-weight: 400;
+  line-height: 0.85;
+  color: var(--ink-strong, #2a1f15);
+  opacity: 0.55;
+}
+.section-titles { 
+  border-bottom: 1px solid var(--rule, rgba(0,0,0,0.18));
+  padding-bottom: 18px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.4vw, 44px);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  margin: 0 0 8px;
+  color: var(--ink-strong, #2a1f15);
+}
+.section-subtitle {
+  font-size: 14px;
+  letter-spacing: 0.4em;
+  color: var(--ink-muted, rgba(0,0,0,0.55));
+  margin: 0;
+}
+.section-num {
+  writing-mode: vertical-rl;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.5em;
+  color: var(--ink-muted, rgba(0,0,0,0.5));
+  padding-top: 8px;
+}
+
+/* ============== ITEM (one sentence) ============== */
+.items {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 72px;
+}
+.item {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  column-gap: 20px;
+  align-items: start;
+  border-radius: 4px;
+  transition: background-color 0.45s ease;
+}
+.item.is-reading {
+  background: color-mix(in srgb, var(--hover-bg, rgba(0,0,0,0.06)) 40%, transparent);
+}
+
+/* Per-item meta column (number) */
+.item-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 8px;
+  gap: 14px;
+}
+.item-num {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--accent, var(--seal-red));
+  border: 1px solid var(--accent, var(--seal-red));
+  padding: 4px 7px 5px;
+  border-radius: 2px;
+  background: var(--num-bg, rgba(255,255,255,0.25));
+  line-height: 1;
+}
+.item-meta::after {
+  content: "";
+  display: block;
+  width: 1px;
+  flex: 1;
+  background: linear-gradient(180deg, var(--rule-soft, rgba(0,0,0,0.12)), transparent 85%);
+  min-height: 80px;
+}
+
+.item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Word-by-word alignment grid */
+.word-grid {
+  --word-column: 76px;
+  --word-gap: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+}
+.word-grid::before {
+  /* hairline rule sitting between the two columns */
+  content: "";
+  position: absolute;
+  top: 8px; bottom: 8px;
+  left: 76px;
+  margin-left: 14px;
+  width: 1px;
+  background: linear-gradient(180deg,
+    transparent,
+    var(--rule, rgba(0,0,0,0.22)) 8%,
+    var(--rule, rgba(0,0,0,0.22)) 92%,
+    transparent);
+  pointer-events: none;
+}
+
+/* Each row owns its two-column pair; the original-text toggle is focusable. */
+.row {
+  display: grid;
+  grid-template-columns: var(--word-column) minmax(0, 1fr);
+  column-gap: var(--word-gap);
+}
+
+.row-toggle {
+  appearance: none;
+  display: block;
+  align-self: start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.row-vert {
+  font-family: var(--font-brush);
+  font-size: calc(40px * var(--char-scale));
+  line-height: 1.05;
+  color: var(--ink-strong);
+  text-align: center;
+  padding: 6px 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  transition: background-color .25s ease, color .25s ease, transform .25s ease;
+  border-radius: 3px;
+  position: relative;
+  min-height: 1px;
+}
+.row-vert .char {
+  display: block;
+  padding: 0;
+}
+.row-vert .char.punct {
+  color: var(--ink-muted);
+  font-size: 0.5em;
+  line-height: 0.6;
+  margin: -0.15em 0 0.2em;
+  opacity: 0.7;
+}
+
+/* Trivial rows (之/于/而/其/以/兮 + punctuation): no hover, slightly faded */
+.row-trivial .row-vert {
+  font-size: calc(30px * var(--char-scale));
+  color: var(--ink-muted);
+  opacity: 0.7;
+  padding: 4px 6px 4px;
+}
+.row-trivial:hover .row-vert,
+.row-trivial:hover .row-def {
+  background: transparent;
+  border-left-color: transparent;
+  color: var(--ink-muted);
+}
+.row-trivial .row-def::before { display: none !important; }
+.row-trivial .row-vert .char.punct {
+  font-size: 0.6em;
+}
+
+.row-def {
+  padding: 10px 16px 10px 18px;
+  border-left: 2px solid transparent;
+  border-radius: 0 4px 4px 0;
+  transition: background-color .25s ease, border-color .25s ease;
+  align-self: start;
+  position: relative;
+  min-height: 1px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.row-def.is-empty { padding: 0; min-height: 0; }
+.row-def .d {
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink-body);
+}
+.row-def .w-py {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+.row-def .w-py ruby rb {
+  font-family: var(--font-brush);
+  font-size: 20px;
+  color: var(--ink-strong);
+}
+.row-def .w-py ruby rt {
+  font-family: var(--font-serif);
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 400;
+  letter-spacing: 0;
+  opacity: 0.95;
+}
+
+/* Meaningful rows are interactive (tap / click to pin a pair) */
+.row:not(.row-trivial) .row-vert,
+.row:not(.row-trivial) .row-def {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.row-toggle:focus-visible {
+  outline: none;
+}
+.row-toggle:focus-visible .row-vert {
+  background: var(--hover-bg, rgba(0,0,0,0.06));
+  color: var(--ink-emph);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.row-toggle:focus-visible + .row-def {
+  background: var(--hover-bg, rgba(0,0,0,0.06));
+  border-left-color: var(--accent);
+}
+
+/* Highlight the paired left+right.
+   Hover is gated to real pointers so touch devices don't get a stuck
+   :hover after tapping; touch relies on the .is-active class instead. */
+.row:not(.row-trivial).is-active .row-vert {
+  background: var(--hover-bg, rgba(0,0,0,0.06));
+  color: var(--ink-emph);
+}
+.row:not(.row-trivial).is-active .row-def {
+  background: var(--hover-bg, rgba(0,0,0,0.06));
+  border-left-color: var(--accent);
+}
+.row:not(.row-trivial).is-active .row-def .w { color: var(--accent); }
+/* active pair reads as "pinned": ring on the chars + bolder connector */
+.row:not(.row-trivial).is-active .row-vert {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.row:not(.row-trivial).is-active .row-def::before {
+  opacity: 0.95;
+  transform: translateX(0) scale(1.1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .row:not(.row-trivial):hover .row-vert {
+    background: var(--hover-bg, rgba(0,0,0,0.06));
+    color: var(--ink-emph);
+  }
+  .row:not(.row-trivial):hover .row-def {
+    background: var(--hover-bg, rgba(0,0,0,0.06));
+    border-left-color: var(--accent);
+  }
+  .row:not(.row-trivial):hover .row-def .w {
+    color: var(--accent);
+  }
+  .row:not(.row-trivial):hover .row-def::before {
+    opacity: 0.85;
+    transform: translateX(0);
+  }
+}
+/* connector dot at the rule line on hover/active */
+.row-def::before {
+  content: "";
+  position: absolute;
+  left: -15px;
+  top: 22px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+/* The 题 (preface title) item — large display, no alignment grid */
+.item-title .word-grid { display: block; }
+.item-title .word-grid::before { display: none; }
+.item-title .preface-display {
+  display: flex;
+  gap: 56px;
+  align-items: stretch;
+}
+.item-title .preface-vert {
+  font-family: var(--font-display);
+  font-size: 56px;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.12em;
+  color: var(--ink-emph);
+  padding: 12px 18px;
+  border-right: 1px solid var(--rule);
+  line-height: 1.1;
+}
+.item-title .preface-defs {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 36px;
+  align-content: center;
+}
+.item-title .preface-def {
+  padding: 8px 4px;
+  border-bottom: 1px dotted var(--rule-soft);
+}
+.item-title .preface-def .w {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--ink-strong);
+  margin-bottom: 2px;
+}
+.item-title .preface-def .d {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink-body);
+}
+
+/* Combined summary (meaning + allusion + note) — placed inside the LAST
+   def's right cell so it tucks up under the def text rather than waiting
+   for the (possibly tall) chars column to end. */
+.summary {
+  margin: 12px 0 0;
+  padding: 10px 0 0 0;
+  border-top: 1px dashed var(--rule, rgba(0,0,0,0.2));
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ink-body);
+  cursor: text;
+}
+.summary a { cursor: pointer; }
+.summary .sect {
+  display: block;
+  padding: 6px 0;
+}
+.summary .sect + .sect {
+  border-top: 1px dotted var(--rule-soft, rgba(0,0,0,0.12));
+}
+.summary .tag {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 2px 6px 2px 9px;
+  margin-right: 10px;
+  vertical-align: 2px;
+  line-height: 1;
+}
+.summary .sect.meaning { color: var(--ink-strong); }
+.summary .sect.note {
+  font-size: 13px;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+.summary .sect.note .tag {
+  color: var(--ink-muted);
+  border-color: var(--ink-muted);
+}
+.summary .sect.sources {
+  font-size: 12px;
+  font-style: normal;
+  color: var(--ink-muted);
+}
+.summary .sect.sources .tag {
+  color: var(--ink-muted);
+  border-color: var(--ink-muted);
+}
+.summary .source-list a {
+  color: var(--accent-2);
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+.summary .source-list a:hover,
+.summary .source-list a:focus-visible {
+  color: var(--accent);
+  border-bottom-style: solid;
+}
+
+/* Allusion: detailed multi-row layout */
+.summary .sect.allusion .tag {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+.summary .a-head {
+  display: inline;
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  color: var(--ink-strong);
+  margin-right: 12px;
+}
+.summary .a-meta {
+  display: inline;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
+  margin-right: 4px;
+}
+.summary .a-meta + .a-meta::before {
+  content: "·";
+  margin: 0 6px;
+  color: var(--ink-muted);
+  opacity: 0.5;
+}
+.summary .a-body {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 12px;
+  row-gap: 3px;
+  margin-top: 4px;
+  padding-left: 4px;
+  font-size: 13.5px;
+  line-height: 1.75;
+}
+.summary .a-body dt {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--accent-2);
+  padding-top: 2px;
+  white-space: nowrap;
+}
+.summary .a-body dd {
+  margin: 0;
+  color: var(--ink-body);
+}
+
+
+
+/* ============== MOOD: parchment (Section I) ============== */
+.section.mood-parchment {
+  background: 
+    radial-gradient(ellipse at 80% 10%, rgba(180,120,60,0.12), transparent 60%),
+    radial-gradient(ellipse at 10% 90%, rgba(120,80,40,0.1), transparent 60%),
+    linear-gradient(180deg, #f1e3c4 0%, #e8d4ad 60%, #ddc596 100%);
+  --ink-strong: #3a2614;
+  --ink-body: #4a3823;
+  --ink-emph: #6b2c1f;
+  --ink-muted: rgba(58,38,20,0.55);
+  --rule: rgba(58,38,20,0.25);
+  --rule-soft: rgba(58,38,20,0.15);
+  --accent: #a83232;
+  --accent-2: #8b5a2b;
+  --block-bg: rgba(255,250,235,0.55);
+  --block-bg-2: rgba(245,225,195,0.55);
+  --hover-bg: rgba(168,50,50,0.10);
+  --num-bg: rgba(255,250,235,0.4);
+}
+
+/* ============== MOOD: celadon (Section II) ============== */
+.section.mood-celadon {
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(180,210,180,0.4), transparent 60%),
+    radial-gradient(ellipse at 90% 80%, rgba(140,180,160,0.3), transparent 60%),
+    linear-gradient(180deg, #d8e3d2 0%, #c4d4c0 60%, #aec5b0 100%);
+  --ink-strong: #1f3a2c;
+  --ink-body: #2c4a3a;
+  --ink-emph: #5a3826;
+  --ink-muted: rgba(31,58,44,0.55);
+  --rule: rgba(31,58,44,0.25);
+  --rule-soft: rgba(31,58,44,0.12);
+  --accent: #8b3a2e;
+  --accent-2: #4a6b5e;
+  --block-bg: rgba(255,255,250,0.45);
+  --block-bg-2: rgba(220,235,220,0.45);
+  --hover-bg: rgba(139,58,46,0.10);
+  --num-bg: rgba(255,255,250,0.4);
+}
+
+/* ============== MOOD: autumn-purple (Section III) ============== */
+.section.mood-autumn-purple {
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(244,200,140,0.45), transparent 55%),
+    radial-gradient(ellipse at 100% 60%, rgba(120,80,130,0.35), transparent 55%),
+    linear-gradient(170deg, #f7e6c4 0%, #e9c8b2 30%, #b89bb5 70%, #6b4a7a 100%);
+  --ink-strong: #2a1838;
+  --ink-body: #3a2548;
+  --ink-emph: #6a2a4a;
+  --ink-muted: rgba(42,24,56,0.55);
+  --rule: rgba(42,24,56,0.22);
+  --rule-soft: rgba(42,24,56,0.12);
+  --accent: #b03a3a;
+  --accent-2: #6a2a4a;
+  --block-bg: rgba(255,250,240,0.5);
+  --block-bg-2: rgba(235,220,230,0.5);
+  --hover-bg: rgba(176,58,58,0.10);
+  --num-bg: rgba(255,250,240,0.42);
+}
+
+/* ============== MOOD: vermilion (Section IV) ============== */
+.section.mood-vermilion {
+  background:
+    radial-gradient(ellipse at 80% 20%, rgba(200,80,50,0.18), transparent 55%),
+    radial-gradient(ellipse at 10% 100%, rgba(150,60,40,0.12), transparent 55%),
+    linear-gradient(180deg, #ecd4b4 0%, #e2bf99 60%, #c89878 100%);
+  --ink-strong: #4a1f14;
+  --ink-body: #5a2c1a;
+  --ink-emph: #8b2a1a;
+  --ink-muted: rgba(74,31,20,0.55);
+  --rule: rgba(74,31,20,0.25);
+  --rule-soft: rgba(74,31,20,0.13);
+  --accent: #9a2a1a;
+  --accent-2: #7a4a28;
+  --block-bg: rgba(255,250,240,0.5);
+  --block-bg-2: rgba(245,225,200,0.5);
+  --hover-bg: rgba(154,42,26,0.10);
+  --num-bg: rgba(255,250,240,0.42);
+}
+
+/* ============== MOOD: sunset (Section V — 落霞秋水) ============== */
+.section.mood-sunset {
+  background:
+    radial-gradient(ellipse at 70% 25%, rgba(255,200,100,0.55), transparent 50%),
+    radial-gradient(ellipse at 25% 70%, rgba(220,110,80,0.35), transparent 50%),
+    linear-gradient(170deg, #f6d27a 0%, #e9a672 25%, #d97e6a 50%, #a87890 75%, #6b8db5 100%);
+  --ink-strong: #2a1a0a;
+  --ink-body: #3a2a18;
+  --ink-emph: #7a2a1a;
+  --ink-muted: rgba(42,26,10,0.55);
+  --rule: rgba(42,26,10,0.25);
+  --rule-soft: rgba(42,26,10,0.13);
+  --accent: #a82a1a;
+  --accent-2: #6b4a2a;
+  --block-bg: rgba(255,248,225,0.5);
+  --block-bg-2: rgba(248,225,190,0.5);
+  --hover-bg: rgba(168,42,26,0.10);
+  --num-bg: rgba(255,248,225,0.45);
+}
+
+/* ============== MOOD: wine (Section VI) ============== */
+.section.mood-wine {
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(180,120,60,0.18), transparent 55%),
+    radial-gradient(ellipse at 90% 90%, rgba(100,40,80,0.3), transparent 55%),
+    linear-gradient(180deg, #3a1d28 0%, #2a1424 60%, #1a0e1c 100%);
+  --ink-strong: #f1d9b5;
+  --ink-body: #d8bf99;
+  --ink-emph: #f4c361;
+  --ink-muted: rgba(241,217,181,0.55);
+  --rule: rgba(241,217,181,0.22);
+  --rule-soft: rgba(241,217,181,0.12);
+  --accent: #d9a44a;
+  --accent-2: #b8806a;
+  --block-bg: rgba(255,240,210,0.06);
+  --block-bg-2: rgba(255,220,180,0.08);
+  --hover-bg: rgba(217,164,74,0.14);
+  --num-bg: rgba(255,240,210,0.06);
+}
+
+/* ============== MOOD: deep-night (Section VII) ============== */
+.section.mood-deep-night {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(150,170,220,0.18), transparent 50%),
+    radial-gradient(ellipse at 20% 100%, rgba(80,100,170,0.18), transparent 55%),
+    linear-gradient(180deg, #1a2440 0%, #11192c 60%, #07091a 100%);
+  --ink-strong: #e8dcc0;
+  --ink-body: #c9bea0;
+  --ink-emph: #f4e6b8;
+  --ink-muted: rgba(232,220,192,0.55);
+  --rule: rgba(232,220,192,0.22);
+  --rule-soft: rgba(232,220,192,0.1);
+  --accent: #c9a878;
+  --accent-2: #8ba0c4;
+  --block-bg: rgba(240,230,200,0.05);
+  --block-bg-2: rgba(180,200,240,0.06);
+  --hover-bg: rgba(201,168,120,0.14);
+  --num-bg: rgba(240,230,200,0.05);
+}
+.section.mood-deep-night::after {
+  /* subtle star field */
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 14% 22%, rgba(255,250,220,0.7), transparent 60%),
+    radial-gradient(1px 1px at 28% 48%, rgba(255,250,220,0.5), transparent 60%),
+    radial-gradient(1px 1px at 44% 18%, rgba(255,250,220,0.6), transparent 60%),
+    radial-gradient(1px 1px at 62% 62%, rgba(255,250,220,0.5), transparent 60%),
+    radial-gradient(1px 1px at 76% 32%, rgba(255,250,220,0.6), transparent 60%),
+    radial-gradient(1px 1px at 88% 78%, rgba(255,250,220,0.5), transparent 60%),
+    radial-gradient(1px 1px at 8% 78%, rgba(255,250,220,0.5), transparent 60%),
+    radial-gradient(1px 1px at 36% 88%, rgba(255,250,220,0.4), transparent 60%),
+    radial-gradient(1px 1px at 92% 12%, rgba(255,250,220,0.6), transparent 60%);
+}
+
+/* ============== MOOD: stormy-grey (Section VIII) ============== */
+.section.mood-stormy-grey {
+  background:
+    radial-gradient(ellipse at 60% 20%, rgba(180,180,190,0.12), transparent 55%),
+    radial-gradient(ellipse at 10% 80%, rgba(80,80,100,0.18), transparent 55%),
+    linear-gradient(180deg, #4d525e 0%, #3a3e48 60%, #2a2d36 100%);
+  --ink-strong: #e4e2da;
+  --ink-body: #c4c2bc;
+  --ink-emph: #f0c878;
+  --ink-muted: rgba(228,226,218,0.55);
+  --rule: rgba(228,226,218,0.22);
+  --rule-soft: rgba(228,226,218,0.1);
+  --accent: #d9a878;
+  --accent-2: #a8b0c4;
+  --block-bg: rgba(240,238,220,0.05);
+  --block-bg-2: rgba(200,200,220,0.06);
+  --hover-bg: rgba(217,168,120,0.14);
+  --num-bg: rgba(240,238,220,0.05);
+}
+
+/* ============== MOOD: dawn-bronze (Section IX) ============== */
+.section.mood-dawn-bronze {
+  background:
+    radial-gradient(ellipse at 70% 10%, rgba(255,210,140,0.4), transparent 55%),
+    radial-gradient(ellipse at 10% 80%, rgba(200,140,80,0.2), transparent 55%),
+    linear-gradient(180deg, #f4dfb5 0%, #ecc78f 60%, #d4a872 100%);
+  --ink-strong: #3a2410;
+  --ink-body: #4a341d;
+  --ink-emph: #7a2a1a;
+  --ink-muted: rgba(58,36,16,0.55);
+  --rule: rgba(58,36,16,0.25);
+  --rule-soft: rgba(58,36,16,0.13);
+  --accent: #a83828;
+  --accent-2: #7a5a2a;
+  --block-bg: rgba(255,250,235,0.55);
+  --block-bg-2: rgba(248,230,200,0.5);
+  --hover-bg: rgba(168,56,40,0.10);
+  --num-bg: rgba(255,250,235,0.45);
+}
+
+/* ============== MOOD: twilight (Section X) ============== */
+.section.mood-twilight {
+  background:
+    radial-gradient(ellipse at 80% 30%, rgba(220,180,180,0.3), transparent 55%),
+    radial-gradient(ellipse at 20% 80%, rgba(120,110,150,0.3), transparent 55%),
+    linear-gradient(180deg, #b8a0a8 0%, #8e7a92 50%, #4e4258 100%);
+  --ink-strong: #f0e6d4;
+  --ink-body: #d4c6b0;
+  --ink-emph: #f4d098;
+  --ink-muted: rgba(240,230,212,0.55);
+  --rule: rgba(240,230,212,0.22);
+  --rule-soft: rgba(240,230,212,0.1);
+  --accent: #d99878;
+  --accent-2: #c4a8c0;
+  --block-bg: rgba(255,245,225,0.07);
+  --block-bg-2: rgba(220,210,230,0.08);
+  --hover-bg: rgba(217,152,120,0.16);
+  --num-bg: rgba(255,245,225,0.06);
+}
+
+/* ============== Highlight banner for famous lines ============== */
+.item.is-highlight .row-vert {
+  font-family: var(--font-brush);
+  font-size: calc(48px * var(--char-scale));
+  color: var(--ink-emph);
+}
+.item.is-highlight .word-grid::after {
+  content: "千古名句";
+  position: absolute;
+  top: -28px;
+  right: 0;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.4em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 4px 10px 4px 14px;
+}
+
+/* ============== Section divider (between sections) ============== */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.4), transparent);
+}
+
+/* ============== Index / Nav ============== */
+.toc {
+  position: fixed;
+  top: 50%;
+  left: 18px;
+  transform: translateY(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: rgba(20,15,10,0.65);
+  backdrop-filter: blur(8px);
+  padding: 16px 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(200,170,120,0.2);
+}
+.toc a {
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: rgba(220,200,170,0.55);
+  text-decoration: none;
+  border-radius: 2px;
+  transition: all .2s ease;
+}
+.toc a:hover, .toc a.is-active {
+  color: #f3e3c3;
+  background: rgba(168,50,50,0.45);
+}
+
+/* ============== Footer ============== */
+.colophon {
+  background: #14100a;
+  color: #8a7350;
+  padding: 64px 40px 80px;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  line-height: 2;
+}
+.colophon .seal {
+  display: inline-block;
+  margin: 16px 0;
+  width: 56px; height: 56px;
+  border: 2px solid var(--seal-red);
+  color: var(--seal-red);
+  font-family: var(--font-display);
+  writing-mode: vertical-rl;
+  font-size: 15px;
+  line-height: 26px;
+  padding: 4px 0;
+  border-radius: 3px;
+}
+.colophon a {
+  color: #b89968;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+.colophon a:hover,
+.colophon a:focus-visible {
+  color: #d7bc8b;
+  border-bottom-style: solid;
+}
+
+/* ============== Responsive ============== */
+@media (max-width: 960px) {
+  .section { padding: 80px 0 60px; }
+  .section-head { padding: 0 28px; gap: 18px; grid-template-columns: auto 1fr; }
+  .section-num { display: none; }
+  .section-label { font-size: 64px; }
+  .items { padding: 0 28px; gap: 56px; }
+  .item { grid-template-columns: 40px 1fr; column-gap: 14px; }
+  .word-grid { --word-column: 60px; --word-gap: 18px; }
+  .word-grid::before { left: 60px; margin-left: 9px; }
+  .row-vert { font-size: calc(28px * var(--char-scale)); padding: 6px 4px; }
+  .item.is-highlight .row-vert { font-size: calc(32px * var(--char-scale)); }
+  .item-extras { margin-left: 78px; }
+  .item-title .preface-display { flex-direction: column; gap: 24px; }
+  .item-title .preface-vert { border-right: none; border-bottom: 1px solid var(--rule); padding: 8px 0; font-size: 44px; }
+  .item-title .preface-defs { grid-template-columns: 1fr; }
+  .cover-title { font-size: 80px; }
+}
+
+/* --- Phones: tighter rhythm, bigger reading text, comfortable tap targets --- */
+@media (max-width: 600px) {
+  .section { padding: 64px 0 48px; }
+  .section-head { padding: 0 18px; gap: 14px; margin-bottom: 40px; }
+  .section-label { font-size: 50px; }
+  .section-title { letter-spacing: 0.04em; }
+  .section-subtitle { letter-spacing: 0.2em; font-size: 13px; }
+
+  .items { padding: 0 16px; gap: 40px; }
+  .item { grid-template-columns: 30px 1fr; column-gap: 10px; }
+  .item-meta { padding-top: 6px; gap: 10px; }
+  .item-meta::after { min-height: 40px; }
+  .item-num { font-size: 11px; padding: 3px 5px 4px; }
+
+  .word-grid { --word-column: 50px; --word-gap: 13px; }
+  .word-grid::before { left: 50px; margin-left: 6px; }
+  .row-vert { font-size: calc(25px * var(--char-scale)); padding: 7px 3px 5px; }
+  .item.is-highlight .row-vert { font-size: calc(29px * var(--char-scale)); }
+
+  /* a little more breathing room + larger gloss text for thumb reading */
+  .row-def { padding: 9px 8px 9px 13px; }
+  .row-def .d { font-size: 15px; line-height: 1.85; }
+  .row-def .w-py { font-size: 16px; }
+  .row-def .w-py ruby rb { font-size: 19px; }
+
+  .summary { font-size: 13.5px; line-height: 1.8; }
+  .summary .a-head { font-size: 15px; }
+  .item.is-highlight .word-grid::after { top: -22px; font-size: 10px; letter-spacing: 0.3em; }
+
+  /* keep the active ring from being clipped against the tight column */
+  .row:not(.row-trivial).is-active .row-vert { box-shadow: inset 0 0 0 1px var(--accent); }
+
+  .cover { padding: 64px 28px; }
+  .cover-title { font-size: 72px; }
+  .colophon { padding: 48px 24px 96px; letter-spacing: 0.2em; }
+}
+
+/* ============== Mobile section nav (bottom strip) ============== */
+@media (max-width: 960px) {
+  .toc {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid rgba(200,170,120,0.25);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .toc::-webkit-scrollbar { display: none; }
+  .toc a {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  /* let the bottom nav clear the final content */
+  .colophon { padding-bottom: 96px; }
+}
+
+/* ============== Font size control ============== */
+.font-ctrl {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(20,15,10,0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 5px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(200,170,120,0.2);
+}
+.font-ctrl button {
+  -webkit-appearance: none;
+  appearance: none;
+  background: none;
+  border: none;
+  color: rgba(220,200,170,0.65);
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color .15s, background .15s;
+  padding: 0;
+}
+.font-ctrl button:hover:not(:disabled) {
+  color: #f3e3c3;
+  background: rgba(168,50,50,0.45);
+}
+.font-ctrl button:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* ============== MOOD: moonlight (YYLJ 跋语 — 微斯人吾谁与归) ============== */
+.section.mood-moonlight {
+  background:
+    radial-gradient(ellipse at 75% 12%, rgba(220,230,245,0.28), transparent 50%),
+    radial-gradient(ellipse at 15% 85%, rgba(140,160,190,0.22), transparent 55%),
+    linear-gradient(180deg, #46506a 0%, #333c54 55%, #232a3e 100%);
+  --ink-strong: #e6e9f0;
+  --ink-body: #c5cbd8;
+  --ink-emph: #f0dfae;
+  --ink-muted: rgba(230,233,240,0.55);
+  --rule: rgba(230,233,240,0.22);
+  --rule-soft: rgba(230,233,240,0.1);
+  --accent: #d4c08a;
+  --accent-2: #9fb0cc;
+  --block-bg: rgba(235,240,250,0.06);
+  --block-bg-2: rgba(210,220,240,0.07);
+  --hover-bg: rgba(212,192,138,0.14);
+  --num-bg: rgba(235,240,250,0.06);
+}
+.section.mood-moonlight::after {
+  /* faint moon halo */
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 82% 14%, rgba(245,242,225,0.5) 0 26px, rgba(245,242,225,0.12) 40px, transparent 90px);
+}
